@@ -17,12 +17,17 @@ import matplotlib.pyplot as plt
 
 
 """
-3 побудувати модель регресії для датасету із ДЗ1 (ціна будинків).
-як лос використати loss = 10 * mse(x, y).
-Модель має включати лише 1 hidden layer.
-додати l2 регуляризацію до шару.
-зберегти модель
+побудувати сегментатор. датасет довільний. так як задача обчислювально складніша, ніж була до цього - можна вчити невелику кількість епох
+
+модель можна взяти звідси https://github.com/karolzak/keras-unet
+
+дефолтний датасет - https://www.tensorflow.org/datasets/catalog/oxford_iiit_pet 
+
+головне розібратися в даних, в постановці задачі, і побудувати правильний флоу.
+
+до кінця донавчати необов'язково
 """
+
 #!pip install git+https://github.com/tensorflow/examples.git
 import tensorflow_datasets as tfds
 from tensorflow_examples.models.pix2pix import pix2pix
@@ -99,7 +104,6 @@ for images, masks in train_batches.take(2):
 test_batches = test_images.batch(BATCH_SIZE)
 
 base_model = tf.keras.applications.MobileNetV2(input_shape=[128, 128, 3], include_top=False)
-
 # Use the activations of these layers
 layer_names = [
     'block_1_expand_relu',   # 64x64
@@ -109,10 +113,8 @@ layer_names = [
     'block_16_project',      # 4x4
 ]
 base_model_outputs = [base_model.get_layer(name).output for name in layer_names]
-
 # Create the feature extraction model
 down_stack = tf.keras.Model(inputs=base_model.input, outputs=base_model_outputs)
-
 down_stack.trainable = False
 
 up_stack = [
@@ -145,6 +147,7 @@ def unet_model(output_channels:int):
 
   return tf.keras.Model(inputs=inputs, outputs=x)
 
+# Configure the model for training.
 
 model = unet_model(output_channels=3)
 model.compile(optimizer='adam',
@@ -160,9 +163,7 @@ tf.keras.utils.plot_model(model, show_shapes=True)
 show_predictions(test_batches)
 
 
-# Configure the model for training.
-# We use the "sparse" version of categorical_crossentropy
-# because our target data is integers.
+
 class DisplayCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         clear_output(wait=True)
